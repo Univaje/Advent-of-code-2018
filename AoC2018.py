@@ -1,4 +1,8 @@
 import re
+from datetime import datetime
+from _ast import pattern
+
+
 def get_data(day,part):
     """Get input data from file"""
     print(f"day{day} part{part}:")
@@ -194,8 +198,34 @@ def noOverlap(day,part):
     print(f"There is no conflict with elf id: {id}")
 
     return
+def sleepingGuard(day,part):
+    lineInfo = re.compile(r'^\[(?P<ts>\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})\]\s*(?P<event>.+)$')
+    CompleteList = []
+    for events in sorted(get_data(day, part)):
+        event = lineInfo.match(events).groups()
+        if event:
+            CompleteList.append({
+                "timestamp": datetime.strptime(event[0], "%Y-%m-%d %H:%M"),
+            "event": event[1]})
+    i =0
+    #TODO:
+    #Check the id when shift starts (past 00:00 doesn't mather since they won't fall a sleep here
+    # check what event comes next ( new shift or fall asleep)
+    #when falling a sleep next has to be wake up so save minutes when sleeping: (wake up time -1) - fall asleep
+    #TODO:
+    #figure out how to calculate most common minute guard was asleep?
+    """Just to show what is in the list for myself"""
+    while i < 3 :
+        print(CompleteList[i])
+        i+=1
+def part2(day,part):
+    List = get_data(day, part)
 
-"""Map days and parts to functions"""
+
+"""
+Map days and parts to functions
+Puzzle information and puzzle inputs can be found on inputs folder
+"""
 actions = {
     (1,1): frequency,
     (1,2): repFrequency,
@@ -203,11 +233,13 @@ actions = {
     (2,2): letterDifference,
     (3,1): fabricCut,
     (3,2): noOverlap,
+    (4,1): sleepingGuard,
+    (4,2): part2,
 }
 
 def main():
     """Which part are you doing?"""
-    day  = 1
+    day  = 4
     part = 1
     """go through the days after previously set"""
     while day <= 25:
