@@ -194,6 +194,7 @@ def noOverlap(day,part):
     print(f"There is no conflict with elf id: {id}")
 
     return
+
 """Map days and parts to functions"""
 actions = {
     (1,1): frequency,
