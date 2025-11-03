@@ -1,9 +1,11 @@
 import re
-from datetime import datetime
+from collections import defaultdict
+from datetime import datetime, timedelta
 from _ast import pattern
+from operator import itemgetter
 
 
-def get_data(day,part):
+def get_data(day, part):
     """Get input data from file"""
     print(f"day{day} part{part}:")
     data = []
@@ -15,6 +17,8 @@ def get_data(day,part):
             data.append(line)
     file.close()
     return data
+
+
 def frequency(day, part):
     print(f"day{day} part{part}:")
     file = open(f"inputs/Day{day}part{part}.txt", "r")
@@ -26,6 +30,8 @@ def frequency(day, part):
     file.close()
     """print total"""
     print(f"Resulting frequency is {total}")
+
+
 def repFrequency(day, part):
     """create 2 lists and total
     Should do this again using sets. List iteration takes way too long"""
@@ -33,7 +39,7 @@ def repFrequency(day, part):
     pastfrequencies = []
     pastfrequencies.append(total)
     """populate frequencies"""
-    frequency = get_data(day,part)
+    frequency = get_data(day, part)
     """go through frequencies and add then to past frequencies list for compare"""
     i = 0
     while 1:
@@ -47,9 +53,11 @@ def repFrequency(day, part):
         pastfrequencies.append(total)
         i += 1
     print(f"First frequency the device reaches twice is :{total}")
-def letterMultible(day,part):
+
+
+def letterMultible(day, part):
     """create lists and variables"""
-    boxArt = get_data(day,part)
+    boxArt = get_data(day, part)
     threeDigs = twoDigs = 0
     """go through all values in data"""
     for box in boxArt:
@@ -74,10 +82,12 @@ def letterMultible(day,part):
         so you can only get 1 of each any ways, we can use the flags to to
         add the given sets per iteration
         """
-        twoDigs +=1 if two else 0
-        threeDigs +=1 if three else 0
+        twoDigs += 1 if two else 0
+        threeDigs += 1 if three else 0
 
     return print(f" found threeDigs: {threeDigs} and twoDigs: {twoDigs} checksum is: {threeDigs * twoDigs}")
+
+
 def letterDifference(day, part):
     """create lists and variables"""
     boxart = get_data(day, part)
@@ -93,12 +103,14 @@ def letterDifference(day, part):
             gives True then othewise it gives False I can sum them and when it gives 
             exacly 1 it means it has only 1 letter difference.
             """
-            if (sum(inst1 != inst2 for inst1, inst2 in zip(box,checkThis) )) == 1:
+            if (sum(inst1 != inst2 for inst1, inst2 in zip(box, checkThis))) == 1:
                 """Stupid way to manipulate set&lists to string"""
                 remove = ''.join(set(checkThis) ^ set(box))
-                correct = box.replace(""+remove, "")
+                correct = box.replace("" + remove, "")
                 return print(f"Common letters between two corresponding box ID:s are:{correct}")
-def calculateOverlap(info1, info2,counted):
+
+
+def calculateOverlap(info1, info2, counted):
     """
     sw = start width
     asw = another start width
@@ -110,22 +122,24 @@ def calculateOverlap(info1, info2,counted):
     ahl = another height length
     Extract values to individual variables
     """
-    id,sw,sh,wl,hl = info1
-    aid, asw,ash,awl,ahl = info2
+    id, sw, sh, wl, hl = info1
+    aid, asw, ash, awl, ahl = info2
     """calculate if given measures overlap result in these are - if they don't and + if they do"""
-    overlapW = min(sw+wl,asw+awl) - max(sw,asw)
-    overlapH = min(sh+hl,ash+ahl) - max(sh,ash)
+    overlapW = min(sw + wl, asw + awl) - max(sw, asw)
+    overlapH = min(sh + hl, ash + ahl) - max(sh, ash)
     if overlapW > 0 and overlapH > 0:
         """when there is overlap calculate the starting point and add resulting values to list
         for later use"""
-        overlapstartW = max(sw,asw)
-        overlapstartH = max(sh,ash)
-        for i in range(overlapstartW,overlapstartW + overlapW):
-            for j in range(overlapstartH,overlapstartH + overlapH):
-                counted.append((i,j))
+        overlapstartW = max(sw, asw)
+        overlapstartH = max(sh, ash)
+        for i in range(overlapstartW, overlapstartW + overlapW):
+            for j in range(overlapstartH, overlapstartH + overlapH):
+                counted.append((i, j))
     else:
         return
-def fabricCut(day,part):
+
+
+def fabricCut(day, part):
     """populate...create variables..."""
     claimList = get_data(day, part)
     CountedPositions = []
@@ -137,11 +151,11 @@ def fabricCut(day,part):
     """TODO: Create way to go through without 2 loops for efficiency"""
     """Go through the list 2 times to get 2 value sets to compare"""
     for i in range(len(claimList)):
-        positions = tuple(map(int,postitionInfo.match(claimList[i]).groups()))
-        for j in range(i+1,len(claimList)):
-            otherPositions = tuple(map(int,postitionInfo.match(claimList[j]).groups()))
+        positions = tuple(map(int, postitionInfo.match(claimList[i]).groups()))
+        for j in range(i + 1, len(claimList)):
+            otherPositions = tuple(map(int, postitionInfo.match(claimList[j]).groups()))
             """Check the funciton for info"""
-            calculateOverlap(positions, otherPositions,CountedPositions)
+            calculateOverlap(positions, otherPositions, CountedPositions)
     """Create 2 sets to populate for seen once and seen more than once"""
     Dublicates = set()
     Seen = set()
@@ -161,6 +175,8 @@ def fabricCut(day,part):
     firstCount = len(Seen)
     print(f"overlap count: {overlapCount} once seen count: {firstCount}")
     return
+
+
 def checkNoOverlap(setOfElves):
     """
     Using the knowledge from previous puzzle we go
@@ -187,38 +203,72 @@ def checkNoOverlap(setOfElves):
             return id
 
     return 0
-def noOverlap(day,part):
+
+
+def noOverlap(day, part):
     List = get_data(day, part)
     Dataposition = re.compile(r"#(\d+) @ (\d+),(\d+): (\d+)x(\d+)")
     setOfElves = set()
     for i in range(len(List)):
-        Data = tuple(map(int,Dataposition.match(List[i]).groups()))
+        Data = tuple(map(int, Dataposition.match(List[i]).groups()))
         setOfElves.add(Data)
     id = checkNoOverlap(setOfElves)
     print(f"There is no conflict with elf id: {id}")
 
     return
-def sleepingGuard(day,part):
+
+
+def collectRelevantData(List, dicti):
+
+    return
+
+
+def sleepingGuard(day, part):
     lineInfo = re.compile(r'^\[(?P<ts>\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})\]\s*(?P<event>.+)$')
-    CompleteList = []
+    Sleeptime = []
+    id = 0
+    sleepStarts = datetime.now
+    timeChart = defaultdict()
     for events in sorted(get_data(day, part)):
         event = lineInfo.match(events).groups()
         if event:
-            CompleteList.append({
-                "timestamp": datetime.strptime(event[0], "%Y-%m-%d %H:%M"),
-            "event": event[1]})
-    i =0
+            #Check the id when shift starts (past 00:00 doesn't mather since they won't fall a sleep here
+            if re.search(r"\d+", event[1]):
+                id  = re.search(r"\d+", event[1]).group()
+            # when falling a sleep next has to be wake up so save minutes when sleeping: (wake-up time -1) - fall asleep
+            elif event[1] == "falls asleep":
+                sleepStarts = datetime.strptime(event[0], "%Y-%m-%d %H:%M")
+            else:
+                """Save all the data to dict"""
+                entry = next((e for e in Sleeptime if e["id"] == id), None)
+                if entry:
+                    entry["sleeptime"] += (datetime.strptime(event[0], "%Y-%m-%d %H:%M") - timedelta(
+                            minutes=1)) - sleepStarts
+                else:
+                    Sleeptime.append({
+                        "id": id,
+                        "sleeptime": (datetime.strptime(event[0], "%Y-%m-%d %H:%M",) - timedelta(
+                            minutes=1)) - sleepStarts,
+                        "falls asleep": sleepStarts,
+                        "waking-up": (datetime.strptime(event[0], "%Y-%m-%d %H:%M",) - timedelta(minutes=1)),
+                    })
+
+    """Sort by id"""
+    x = sorted(Sleeptime, key=lambda e: e["id"])
+    for i in x:
+        hours, minutes = i['sleeptime'].seconds // 3600, (i['sleeptime'].seconds // 60) % 60
+        print(f"Guard #{i['id']}: Slept: {hours}h {minutes}min")
+    mostasleep = max(x, key = lambda e: e["sleeptime"])
+    print(f"most asleep was guard id {mostasleep['id']} He slept for {mostasleep['sleeptime']}")
+    collectRelevantData(Sleeptime, timeChart)
+    i = 0
     #TODO:
-    #Check the id when shift starts (past 00:00 doesn't mather since they won't fall a sleep here
-    # check what event comes next ( new shift or fall asleep)
-    #when falling a sleep next has to be wake up so save minutes when sleeping: (wake up time -1) - fall asleep
-    #TODO:
-    #figure out how to calculate most common minute guard was asleep?
+    # figure out how to calculate most common minute guard was asleep?
     """Just to show what is in the list for myself"""
-    while i < 3 :
-        print(CompleteList[i])
-        i+=1
-def part2(day,part):
+    while i < 3:
+        print(Sleeptime[i].values())
+        i += 1
+def part2(day, part):
     List = get_data(day, part)
 
 
@@ -227,24 +277,25 @@ Map days and parts to functions
 Puzzle information and puzzle inputs can be found on inputs folder
 """
 actions = {
-    (1,1): frequency,
-    (1,2): repFrequency,
-    (2,1): letterMultible,
-    (2,2): letterDifference,
-    (3,1): fabricCut,
-    (3,2): noOverlap,
-    (4,1): sleepingGuard,
-    (4,2): part2,
+    (1, 1): frequency,
+    (1, 2): repFrequency,
+    (2, 1): letterMultible,
+    (2, 2): letterDifference,
+    (3, 1): fabricCut,
+    (3, 2): noOverlap,
+    (4, 1): sleepingGuard,
+    (4, 2): part2,
 }
+
 
 def main():
     """Which part are you doing?"""
-    day  = 4
+    day = 4
     part = 1
     """go through the days after previously set"""
     while day <= 25:
         """Get the day from dict"""
-        func = actions.get((day,part))
+        func = actions.get((day, part))
         """if found run it"""
         if func:
             func(day, part)
