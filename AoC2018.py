@@ -218,59 +218,66 @@ def noOverlap(day, part):
     return
 
 
-def collectRelevantData(List, dicti):
-
-    return
+def collectRelevantData(listing):
+    sleepStarts = datetime.now()
+    guard_id = 0
+    SleepingGuard = defaultdict(lambda: {"sleeptime": 0, "minutesInSleep": defaultdict(int)})
+    lineInfo = re.compile(r'^\[(?P<ts>\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})\]\s*(?P<event>.+)$')
+    for line in listing:
+        event = lineInfo.match(line).groups()
+        timestamp = datetime.strptime(event[0], "%Y-%m-%d %H:%M")
+        minute = timestamp.minute
+        if event:
+            if re.search(r"\d+", event[1]):
+                guard_id  = int(re.search(r"\d+", event[1]).group())
+            # when falling a sleep next has to be wake up so save minutes when sleeping: (wake-up time -1) - fall asleep
+            elif event[1] == "falls asleep":
+                sleepStarts = timestamp.minute
+            else:
+                Wakeup = int(minute)
+                sleepStartsminute = int(sleepStarts)
+                sleeptime = int(Wakeup) - sleepStartsminute
+                guard = SleepingGuard[guard_id]
+                for minute in range(sleepStartsminute, Wakeup):
+                    guard["minutesInSleep"][minute] += 1
+                guard["sleeptime"] += sleeptime
+    return [{"id": gid, **data} for gid, data in SleepingGuard.items()]
 
 
 def sleepingGuard(day, part):
-    lineInfo = re.compile(r'^\[(?P<ts>\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})\]\s*(?P<event>.+)$')
-    Sleeptime = []
-    id = 0
-    sleepStarts = datetime.now
-    timeChart = defaultdict()
-    for events in sorted(get_data(day, part)):
-        event = lineInfo.match(events).groups()
-        if event:
-            #Check the id when shift starts (past 00:00 doesn't mather since they won't fall a sleep here
-            if re.search(r"\d+", event[1]):
-                id  = re.search(r"\d+", event[1]).group()
-            # when falling a sleep next has to be wake up so save minutes when sleeping: (wake-up time -1) - fall asleep
-            elif event[1] == "falls asleep":
-                sleepStarts = datetime.strptime(event[0], "%Y-%m-%d %H:%M")
-            else:
-                """Save all the data to dict"""
-                entry = next((e for e in Sleeptime if e["id"] == id), None)
-                if entry:
-                    entry["sleeptime"] += (datetime.strptime(event[0], "%Y-%m-%d %H:%M") - timedelta(
-                            minutes=1)) - sleepStarts
-                else:
-                    Sleeptime.append({
-                        "id": id,
-                        "sleeptime": (datetime.strptime(event[0], "%Y-%m-%d %H:%M",) - timedelta(
-                            minutes=1)) - sleepStarts,
-                        "falls asleep": sleepStarts,
-                        "waking-up": (datetime.strptime(event[0], "%Y-%m-%d %H:%M",) - timedelta(minutes=1)),
-                    })
+    Guardlist = sorted(get_data(day, part))
+    SleepingGuard = collectRelevantData(Guardlist)
+    most_asleep = max(SleepingGuard, key = lambda e: e["sleeptime"])
+    minute = max(most_asleep["minutesInSleep"],key=most_asleep["minutesInSleep"].get)
+    checksum = int(most_asleep["id"]) * int(minute)
 
-    """Sort by id"""
-    x = sorted(Sleeptime, key=lambda e: e["id"])
-    for i in x:
-        hours, minutes = i['sleeptime'].seconds // 3600, (i['sleeptime'].seconds // 60) % 60
-        print(f"Guard #{i['id']}: Slept: {hours}h {minutes}min")
-    mostasleep = max(x, key = lambda e: e["sleeptime"])
-    print(f"most asleep was guard id {mostasleep['id']} He slept for {mostasleep['sleeptime']}")
-    collectRelevantData(Sleeptime, timeChart)
-    i = 0
-    #TODO:
-    # figure out how to calculate most common minute guard was asleep?
-    """Just to show what is in the list for myself"""
-    while i < 3:
-        print(Sleeptime[i].values())
-        i += 1
+    print(f"most asleep was guard id {most_asleep['id']} "
+          f"He slept for {most_asleep['sleeptime']} "
+          f"most asleep on minute {minute} "
+          f" Check sum should be: {checksum}")
+
 def part2(day, part):
-    List = get_data(day, part)
+    SleepingGuard = collectRelevantData(sorted(get_data(day, part)))
+    most_asleep = None
+    max_count = -1
 
+    for guard in SleepingGuard:
+        if not guard["minutesInSleep"]:
+            continue  # skip guards who never slept
+        minute = max(guard["minutesInSleep"], key=guard["minutesInSleep"].get)
+        count = guard["minutesInSleep"][minute]
+
+        if count > max_count:
+            max_count = count
+            most_asleep = {
+                "Guard": guard["id"],
+                "minute": minute,
+                "howMany": count,
+                "checksum": guard["id"] * minute,
+            }
+    print(f"of all guards, Guard Id {most_asleep['Guard']} slept most frequently on the same minute"
+          f" ({most_asleep['minute']}). Counted {most_asleep['howMany']} "
+          f"times check sum should be: {most_asleep['checksum']}")
 
 """
 Map days and parts to functions
