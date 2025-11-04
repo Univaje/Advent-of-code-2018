@@ -1,5 +1,6 @@
+import os
 import re
-from collections import defaultdict
+from collections import defaultdict, deque
 from datetime import datetime, timedelta
 from _ast import pattern
 from operator import itemgetter
@@ -7,15 +8,29 @@ from operator import itemgetter
 
 def get_data(day, part):
     """Get input data from file"""
+    path = f"inputs/Day{day}part{part}.txt"
     print(f"day{day} part{part}:")
+    size = os.path.getsize(path)
+    print(f"converting file. file size: \t{size} bytes")
+    if not os.path.exists(path):
+        print(f" File not found: {path}")
+        return None
     data = []
-    file = open(f"inputs/Day{day}part{part}.txt", "r")
-    for line in file:
-        if type(line) is int:
-            data.append(int(line))
-        else:
-            data.append(line)
-    file.close()
+
+
+    file = open(f"inputs/Day{day}part{part}.txt", "r", encoding="utf-8")
+    if size < 100000:
+        for line in file:
+            line = line.strip()
+            if line.isdigit():
+                data.append(int(line))
+            else:
+                data.append(line)
+        file.close()
+    else:
+        """NEed to figure this out later"""
+        print("File Size is", file.tell(), "bytes returning it in parts")
+
     return data
 
 
@@ -256,7 +271,8 @@ def sleepingGuard(day, part):
           f"most asleep on minute {minute} "
           f" Check sum should be: {checksum}")
 
-def part2(day, part):
+
+def WhenGuardSLeeps(day, part):
     SleepingGuard = collectRelevantData(sorted(get_data(day, part)))
     most_asleep = None
     max_count = -1
@@ -279,6 +295,56 @@ def part2(day, part):
           f" ({most_asleep['minute']}). Counted {most_asleep['howMany']} "
           f"times check sum should be: {most_asleep['checksum']}")
 
+
+def prosessingString(data):
+    RemoveDud = deque(data)
+    CorrectOnes = deque()
+    i = 0
+    for dublic in RemoveDud:
+        if CorrectOnes and CorrectOnes[-1].lower() == dublic.lower() and CorrectOnes[-1] != dublic:
+            CorrectOnes.pop()
+        else:
+            CorrectOnes.append(dublic)
+    return CorrectOnes
+def SuitPolymers(day, part):
+    data = get_data(day, part)
+    inputs = ""
+    if len(data) == 1:
+        inputs = data[0].strip()
+    else:
+        inputs = ''.join(line.strip() for line in data if line.strip())
+    CorrectOnes = prosessingString(inputs)
+
+    print(f"There are {len(CorrectOnes)} units of polymer left after scan. ")
+    return
+
+def moreProsessing(day, part):
+    data = get_data(day, part)
+    Letters = set()
+    output = []
+    if len(data) == 1:
+        inputs = data[0].strip()
+    else:
+        inputs = ''.join(line.strip() for line in data if line.strip())
+    Letters = set(inputs)
+    for letter in Letters:
+        test = inputs.replace(letter.upper(), "").replace(letter.lower(), "")
+        CorrectOnes = prosessingString(test)
+        output.append({
+            "Letter" : letter,
+            "Length" : len(CorrectOnes)
+        })
+    minimum = min(output, key=lambda e: e["Length"])
+    print(f'removing letter {minimum["Letter"]} gives {minimum["Length"]} units of polymer left after scan. ')
+
+
+
+    return
+
+def ManhattanGeoLocation(day, part):
+    data = get_data(day, part)
+
+    return
 """
 Map days and parts to functions
 Puzzle information and puzzle inputs can be found on inputs folder
@@ -291,14 +357,18 @@ actions = {
     (3, 1): fabricCut,
     (3, 2): noOverlap,
     (4, 1): sleepingGuard,
-    (4, 2): part2,
+    (4, 2): WhenGuardSLeeps,
+    (5, 1): SuitPolymers,
+    (5, 2): moreProsessing,
+    (6, 1): ManhattanGeoLocation(),
+    (6, 2): ManhattanGeoLocation(),
 }
 
 
 def main():
     """Which part are you doing?"""
-    day = 4
-    part = 1
+    day = 5
+    part = 2
     """go through the days after previously set"""
     while day <= 25:
         """Get the day from dict"""
