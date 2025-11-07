@@ -223,41 +223,81 @@ def MinimumPolymers(day, part):
 
 """Day 6 part 1"""
 def ManhattanGeoLocation(day, part):
+    # Get the puzzle input for the given day and part
     data = get_data(day, part)
+
+    # Convert the input strings to a NumPy array of coordinates
     Locations = np.array([list(map(int, item.split(','))) for item in data])
-    """Just testing"""
-    minX,maxX = np.min(Locations[:, 0]),np.max(Locations[:, 0])
-    minY,maxY = np.min(Locations[:, 1]),np.max(Locations[:, 1])
 
-    Allx, Ally = np.meshgrid(np.arange(minX, maxX + 1), np.arange(minY, maxY + 1))
-    allLocations = np.column_stack([Allx.ravel(), Ally.ravel()])
-    moves = [(-1,0), (1,0), (0,-1), (0,1)]
-    turns = deque()
+    # Margin to extend the bounding box to handle edges
+    marginaali = 1
+
+    # Find the min and max coordinates for X and Y, with margin
+    minX, maxX = Locations[:, 0].min() - marginaali, Locations[:, 0].max() + marginaali
+    minY, maxY = Locations[:, 0].min() - marginaali, Locations[:, 0].max() + marginaali
+
+    # Create a 2D grid of X and Y coordinates
+    GridX, GridY = np.meshgrid(np.arange(minX, maxX + 1), np.arange(minY, maxY + 1))
+
+    # Compute the Manhattan distance from each grid point to each location
+    differences = (
+            np.abs(GridX - Locations[:, 0][:, None, None]) +
+            np.abs(GridY - Locations[:, 1][:, None, None])
+    )
+
+    # Find the minimum distance for each grid point
+    min_dists = differences.min(axis=0)
+
+    # Assign each grid point to the index of the closest location
+    owner = np.argmin(differences, axis=0)
+
+    # Identify grid points where there is a tie (multiple locations equally close)
+    ties = (differences == min_dists)
+    tieCount = np.sum(ties, axis=0)
+
+    # Mark grid points with ties as -1 (no owner)
+    owner[tieCount > 1] = -1
+
+    # Collect the owners that appear on the edges of the grid
+    edges = np.concatenate([
+        owner[0, :],  # top edge
+        owner[-1, :],  # bottom edge
+        owner[:, 0],  # left edge
+        owner[:, -1],  # right edge
+    ])
+    # Get unique edge owners (these locations have infinite area)
+    infinitSrc = np.unique(edges[edges >= 0])
+
+    # Count the area of each location by summing grid points owned
+    Area = np.array([
+        np.sum(owner == i) for i in range(Locations.shape[0])
+    ], dtype=int)
+
+    # Remove the areas of locations with infinite regions
+    Area[infinitSrc] = 0
+
+    # Find the largest finite area
+    Result = np.max(Area)
+    print(f"Largest area is {Result}")
 
 
-    differences = np.abs(allLocations[None, :, :] - Locations[:, None, :]).sum(axis=2)
+def EvenMoreManhattanCrap(day,part):
+    # Get the puzzle input for the given day and part
+    data = get_data(day, part)
 
+    # Convert the input strings to a NumPy array of coordinates
+    Locations = np.array([list(map(int, item.split(','))) for item in data])
 
-    closestOnes = np.argmin(differences, axis=0)
+    # Margin to extend the bounding box to handle edges
+    marginaali = 1
 
-    min_dists = np.min(differences, axis=0, keepdims=True)
-    ties = (differences == min_dists).sum(axis=0) > 1
+    # Find the min and max coordinates for X and Y, with margin
+    minX, maxX = Locations[:, 0].min() - marginaali, Locations[:, 0].max() + marginaali
+    minY, maxY = Locations[:, 0].min() - marginaali, Locations[:, 0].max() + marginaali
 
+    # Create a 2D grid of X and Y coordinates
+    GridX, GridY = np.meshgrid(np.arange(minX, maxX + 1), np.arange(minY, maxY + 1))
 
-    edge_indexs = np.where(
-        (allLocations[:, 0] == minX) |
-        (allLocations[:, 0] == maxX) |
-        (allLocations[:, 1] == minY) |
-        (allLocations[:, 1] == maxY))[0]
-
-    edge_mask = np.zeros(len(allLocations), dtype=bool)
-    edge_mask[edge_indexs] = True
-
-    edge_or_tie_mask = edge_mask | ties
-
-    mask = ~edge_or_tie_mask
-
-    filtered_deliveries = allLocations[mask]
     return
 """
 Map days and parts to functions
@@ -275,13 +315,13 @@ actions = {
     (5, 1): SuitPolymers,
     (5, 2): MinimumPolymers,
     (6, 1): ManhattanGeoLocation,
-    (6, 2): ManhattanGeoLocation,
+    (6, 2): EvenMoreManhattanCrap,
 }
 
 
 def main():
     """Which part are you doing?"""
-    day = 1
+    day = 6
     part = 1
     """go through the days after previously set"""
     while day <= 25:
