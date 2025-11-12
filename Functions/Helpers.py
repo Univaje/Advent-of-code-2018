@@ -33,9 +33,6 @@ def checkNoOverlap(setOfElves):
 
     return 0
 
-def calculateManhattanDistance(x1, y1, x2, y2):
-    return abs(x1 - x2) + abs(y1 - y2)
-
 def collectRelevantData(listing):
     sleepStarts = datetime.now()
     guard_id = 0

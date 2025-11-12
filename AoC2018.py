@@ -1,6 +1,4 @@
-import os
-import re
-import numpy as np
+import heapq
 from classes.coordinates import *
 from Functions.Helpers import *
 from collections import defaultdict, deque
@@ -230,11 +228,11 @@ def ManhattanGeoLocation(day, part):
     Locations = np.array([list(map(int, item.split(','))) for item in data])
 
     # Margin to extend the bounding box to handle edges
-    marginaali = 1
+    margin = 1
 
     # Find the min and max coordinates for X and Y, with margin
-    minX, maxX = Locations[:, 0].min() - marginaali, Locations[:, 0].max() + marginaali
-    minY, maxY = Locations[:, 0].min() - marginaali, Locations[:, 0].max() + marginaali
+    minX, maxX = Locations[:, 0].min() - margin, Locations[:, 0].max() + margin
+    minY, maxY = Locations[:, 0].min() - margin, Locations[:, 0].max() + margin
 
     # Create a 2D grid of X and Y coordinates
     GridX, GridY = np.meshgrid(np.arange(minX, maxX + 1), np.arange(minY, maxY + 1))
@@ -288,9 +286,9 @@ def EvenMoreManhattanCrap(day,part):
     # Convert the input strings to a NumPy array of coordinates
     Locations = np.array([list(map(int, item.split(','))) for item in data])
 
-    # Margin to extend the bounding box to handle edges
+    # Margin to extend the bounding box to handle edges. Treshold for the area
     marginaali = 1
-
+    treshold = 10000
     # Find the min and max coordinates for X and Y, with margin
     minX, maxX = Locations[:, 0].min() - marginaali, Locations[:, 0].max() + marginaali
     minY, maxY = Locations[:, 0].min() - marginaali, Locations[:, 0].max() + marginaali
@@ -298,7 +296,102 @@ def EvenMoreManhattanCrap(day,part):
     # Create a 2D grid of X and Y coordinates
     GridX, GridY = np.meshgrid(np.arange(minX, maxX + 1), np.arange(minY, maxY + 1))
 
-    return
+    # Compute the Manhattan distance from each grid point to each location
+    differences = (
+            np.abs(GridX - Locations[:, 0][:, None, None]) +
+            np.abs(GridY - Locations[:, 1][:, None, None])
+    )
+    dfferenceSum = differences.sum(axis=0)
+
+    region = dfferenceSum < treshold
+
+    Area = np.sum(region).astype(int)
+    return print(f"Largest area is {Area}")
+
+
+def sledgeBuildingInstructions(day,part):
+    data = get_data(day, part)
+    steps = defaultdict(set)
+    pattern = re.compile(r"Step ([A-Z]) must be finished before step ([A-Z]) can begin")
+
+    for line in data:
+        match = pattern.match(line.strip())
+        if match:
+            before, after = match.groups()
+            steps[after].add(before)
+            steps[before]
+
+    Available = [letter for letter, deps in steps.items() if not deps]
+    heapq.heapify(Available)
+    word = ""
+    while Available:
+        letter = heapq.heappop(Available)
+        word += letter
+
+        for key in steps:
+            if letter in steps[key]:
+                steps[key].remove(letter)
+                if not steps[key]:
+                    heapq.heappush(Available, key)
+
+    return print(word)
+
+def moreElfs(day, part):
+    data = get_data(day, part)
+    time = 0
+    word = ""
+    workers = list()
+    steps = defaultdict(set)
+    pattern = re.compile(r"Step ([A-Z]) must be finished before step ([A-Z]) can begin")
+
+    for line in data:
+        match = pattern.match(line.strip())
+        if match:
+            before, after = match.groups()
+            steps[after].add(before)
+            steps[before]
+
+    Available = [letter for letter, deps in steps.items() if not deps]
+    heapq.heapify(Available)
+    while steps:
+        if workers:
+            heapq.heapify(workers)
+            stepTime, letter = min(workers, key=lambda x: x[0])
+            finishedWork = []
+            newWork = []
+            time += stepTime
+            print(f" letter = {letter} stepTime = {stepTime}")
+
+            for workertime, workerletter in workers:
+                workertime -= stepTime
+                if workertime == 0:
+                    finishedWork.append(workerletter)
+                else:
+                    newWork.append((workertime, workerletter))
+                print(workers)
+            workers = newWork
+            for letter in finishedWork:
+                word += letter
+                for key in list(steps.keys()):
+                    if letter in steps[key]:
+                        steps[key].remove(letter)
+                        if not steps[key]:
+                            heapq.heappush(Available, key)
+                    if not steps[key] and key in word:
+                        print("removing ", key)
+                        del steps[key]
+            newlyAssigned = []
+            while len(workers) + len(newlyAssigned) < 5 and Available:
+                letterPair = heapq.heappop(Available)
+                duration = 60 + (ord(letterPair[0]) - 64)
+                newlyAssigned.append((duration, letterPair))
+            workers.extend(newlyAssigned)
+        else:
+            while len(workers) < 5 and Available:
+                letterPair = heapq.heappop(Available)
+                duration = 60 + ord(letterPair[0]) - 64
+                workers.append((duration, letterPair))
+    return print(f"Sledge building took {time} seconds.\n")
 """
 Map days and parts to functions
 Puzzle information and puzzle inputs can be found on inputs folder
@@ -316,13 +409,15 @@ actions = {
     (5, 2): MinimumPolymers,
     (6, 1): ManhattanGeoLocation,
     (6, 2): EvenMoreManhattanCrap,
+    (7, 1): sledgeBuildingInstructions,
+    (7, 2): moreElfs,
 }
 
 
 def main():
     """Which part are you doing?"""
-    day = 6
-    part = 1
+    day = 7
+    part = 2
     """go through the days after previously set"""
     while day <= 25:
         """Get the day from dict"""
