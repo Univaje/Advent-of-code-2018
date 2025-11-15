@@ -7,6 +7,7 @@ This project is fo myself to advance my knowledge on python coding and I like so
 I have made few projects on python so my knowledge on this coding language is not on par with others that I have worked more. Time to change that. My plan is to try different puzzles with different ways to create them. Lists queues Arrays etc. Not nessessarily using the most efficient way. 
 >The puzzles can be found on: [Advent of Code](https://adventofcode.com/2018/)
 
+All of the puzzle information and inputdata the site generated for me can be found on input folder. Helpers contain functions that some of the parts are using and classes, well they contain classes if I use them on theese.  
 I have made few projects on python so my knowledge on this coding language is not on par with others that I have worked more. Time to change that. My plan is to try different puzzles with different ways to create them. Lists queues Arrays etc. Not nessessarily using the most efficient way. This is ongoing work. I'm continuing this when ever I have the time. My plan is to finish the year 2018 and move on to next year with another coding language. If you want the solutions for 2018 year AoC you can download my repo. ***Theese are not the most optimizes solutions!***
 
 ##What have I done:
